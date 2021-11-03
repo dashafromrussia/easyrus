@@ -1,0 +1,239 @@
+import React, {useState, useEffect} from 'react'
+import {View, Text, StyleSheet, Dimensions, ActivityIndicator, FlatList, ScrollView, Image, TouchableOpacity,Button, Alert} from 'react-native'
+import { HeaderButtons, Item } from 'react-navigation-header-buttons'
+import { AppHeaderIcon } from '../components/AppHeaderIcon'
+import { useDispatch, useSelector } from 'react-redux'
+import { addReqFriend, deleteRequest, updateFriend } from '../store/actions/post'
+import { Ionicons } from '@expo/vector-icons'; 
+
+
+
+export const FriendScreen = ({navigation}) =>{ //заявки друзья
+  const cookie= useSelector(state => state.post.cookie)
+  const users = useSelector(state => state.post.users)
+  const data = users.find(el=>el.id.toString()===cookie.toString())
+    const [text,setText] = useState('')
+    const [name,setName] = useState('')
+    const friends = data ? data.friends : []
+   
+    const dispatch = useDispatch()
+    const statuses = useSelector(state => state.post.statuses)
+    const requestfriend = useSelector(state => state.post.requestfriend)
+    const myrequest = requestfriend.filter(el=>el.whom.toString()===data.id.toString())
+    let datarequest =[]
+    myrequest.forEach(elem=>{
+      datarequest.push(users.find(el=>el.id.toString()===elem.who.toString())) 
+    })
+    let datafriend =[]
+     
+    friends.forEach(el=>{
+       if(users.find(elem=>elem.id.toString()===el.id.toString())){
+           datafriend.push(users.find(elem=>elem.id.toString()===el.id.toString()))
+       }
+    })
+
+    useEffect(()=>{
+      console.log(users,'users')
+    })
+
+    const removeFriend =async(elem)=>{
+      console.log(elem,'elemmss')
+ // await updateFriend({id:data.id,friends:friends.filter(el=>el.id.toString()!==elem.id.toString())})(dispatch)
+ // updateFriend({id:elem.id,friends:elem.friends.filter(el=>el.id.toString()!==data.id.toString())})(dispatch)
+// await updateFriend({id:elem.id,friends:elem.friends.filter(el=>el.id.toString()!==data.id.toString())})(dispatch)
+    }
+
+    const toProfile =(elem)=>{
+        if(data.id.toString()==elem.id.toString()){
+          navigation.navigate('Main')
+        }else{
+           navigation.navigate('Profil',{data:elem})
+        }
+        navigation.navigate('Profil',{data:elem})
+      }
+
+    const addToFriend =(user)=>{ // заявка
+        if(requestfriend.find(el=>el.who.toString()===data.id.toString() && el.whom.toString()===user.id.toString())){
+          Alert.alert('Вы уже отправили заявку!')
+          return false
+        }
+        addReqFriend({who:data.id.toString(), whom:user.id.toString()})(dispatch)
+        Alert.alert(`Вы отправили заявку дружбы ${user.login} !`)
+        }
+
+      const accepted =(el)=>{
+       const myfriends = [...friends,{id:el.id.toString()}]
+       const yourfriends = [...el.friends,{id:data.id.toString()}]
+       const thisreq = myrequest.find(elem=>elem.who.toString()===el.id.toString()&& elem.whom.toString()===data.id.toString()).id
+       deleteRequest(thisreq)(dispatch)
+   //  {myid:data.id,yourid:el.id,myfriends:myfriends,yourfriends:yourfriends}
+   updateFriend({id:data.id,friends:myfriends})(dispatch)
+   updateFriend({id:el.id,friends:yourfriends})(dispatch)
+   console.log('my',{id:data.id,friends:myfriends})
+   console.log('your',{id:el.id,friends:yourfriends})
+        }
+
+
+        const rejected =(el)=>{
+          const thisreq = myrequest.find(elem=>elem.who.toString()===el.id.toString() && elem.whom.toString()===data.id.toString()).id
+            deleteRequest(thisreq)(dispatch)
+        }
+
+
+
+    return(
+<ScrollView>
+      {<View style={styles.main}>
+        {datarequest.length!==0 ? <View>
+        <Text style={styles.header}>Запросы в друзья</Text>
+        {datarequest.map(el=><View key={el.id.toString()}><TouchableOpacity onPress={()=>toProfile(el)}><Text>{el.name}</Text>
+        <View marginRight={10}>
+      <Image style={styles.image} source={{uri:el.image}}/>
+      {
+      statuses.find(elem=>elem.userid.toString()===el.id.toString()) ?
+          <View style={{ position: 'absolute', right: 17, bottom: 20, backgroundColor: statuses.find(elem=>elem.userid.toString()===el.id.toString()).status === "active" ? '#00e600' : 'blue', borderRadius: 9, width: 14, height: 14, justifyContent: 'center', alignItems: 'center' }}>
+          </View> : null
+          }
+      </View>
+      </TouchableOpacity>
+      <View>
+          <View><Button color='black' title='Принять' onPress={()=>accepted(el)}/></View>
+          <View><Button color='black' title='Отклонить' onPress={()=>rejected(el)}/></View>
+      </View>
+        </View>)}
+        </View>:null}
+        {datafriend.length!==0 ? <View>
+          <Text style={styles.header}>Мои друзья</Text>
+  {datafriend.map(elem=><View key={elem.id.toString()}><TouchableOpacity onPress={()=>toProfile(elem)}><View style={styles.block1}>
+      <View marginRight={10}>
+      <Image style={styles.image} source={{uri:elem.image}}/>
+      {
+      statuses.find(el=>el.userid.toString()===elem.id.toString()) ?
+          <View style={{ position: 'absolute', right: 17, bottom: 20, backgroundColor: statuses.find(el=>el.userid.toString()===elem.id.toString()).status === "active" ? '#00e600' : 'blue', borderRadius: 9, width: 14, height: 14, justifyContent: 'center', alignItems: 'center' }}>
+          </View> : null
+          }
+      </View>
+      <View justifyContent="center" paddingRight={40}>
+      <Text style={styles.header}>{elem.name}</Text>
+      <Text style={styles.header}>{elem.surname}</Text>
+      </View>
+      <View marginLeft={40}>
+      {elem.friends.find(el=>el.id.toString()===cookie.toString()) ?  <Button title='- Remove' color="black" onPress={()=>removeFriend(elem)}/> :
+      <Button title='+ Add' color="black" onPress={()=>addToFriend(elem)}/>}
+      </View>
+      </View>
+      </TouchableOpacity>
+  </View>
+  )}
+  </View>:<Text>Друзей пока нет...</Text>}
+        </View>}
+      </ScrollView>
+    )
+}
+
+FriendScreen.navigationOptions = ({ navigation }) => {
+  return {
+    headerTitle: () => {
+      return (
+        <Text
+          style={{
+            color: '#fff',
+            fontWeight: 'bold',
+            fontSize: 20
+          }}
+        >
+       Друзья
+        </Text>
+      );
+    },
+      headerLeft:()=>
+        <HeaderButtons HeaderButtonComponent={AppHeaderIcon}>
+          <Item
+            title='Toggle Drawer'
+            iconName='ios-menu'
+            onPress={() => navigation.toggleDrawer()}
+          />
+        </HeaderButtons>
+    }
+  }
+
+
+const styles = StyleSheet.create({
+    main: {
+      flex: 1,
+     padding:20,
+   //  alignItems:"center",
+  //   justifyContent:"center",
+    },
+    admin: {
+      flex: 1,
+     padding:20,
+    // alignItems:"center",
+   //  justifyContent:"center",
+    },
+    text:{
+      color:"grey",
+      fontFamily:'open-regular',
+      fontSize: 15
+    },
+    header:{
+      color:"grey",
+      fontFamily:'open-regular',
+      fontSize: 17,
+      marginRight:15
+    },
+    center: {
+      flex: 1,
+      padding:10,
+      alignItems:'center',
+      fontFamily:'open-regular',
+      justifyContent:'center'
+    },
+    block:{
+      flexDirection:"row",
+      alignItems:"center",
+      justifyContent:"space-between",
+      borderRadius:2,
+      borderColor:'grey',
+      borderWidth:0.5,
+      padding:10
+   //   marginLeft: 10,
+      //marginVertical:15
+    },
+    input:{
+      alignItems:"center",
+      justifyContent:"center",
+      borderRadius:2,
+      borderColor:'grey',
+      borderWidth:0.5,
+      padding:5
+    },
+    small:{
+      color:"black",
+      fontFamily:'open-regular',
+      fontSize: 18
+    },
+    image: {
+      width: 70,
+      height: 70,
+      margin: 15,
+      borderRadius:50
+    },
+    block1:{
+      marginBottom:15,
+      flexDirection:"row",
+      marginBottom:15,
+      alignItems:"center",
+     justifyContent:'center'
+    },
+    buttons:{
+      flexDirection:"row",
+      alignItems:"center",
+      justifyContent:"space-between",
+      marginBottom:30
+    },
+    list:{
+    //  justifyContent:"space-between",
+      flexDirection:"row",
+    }
+  })
