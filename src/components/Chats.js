@@ -29,6 +29,7 @@ export const Chats = ({onOpen, el}) =>{
      let lastmessage 
      if(lastmess>=0){
        lastmessage = allmessages[lastmess].mess
+       lastmessage = lastmessage.slice(0,20)
      }
      else{
       lastmessage = '...'
@@ -64,7 +65,7 @@ export const Chats = ({onOpen, el}) =>{
           <Text style={styles.text}>{el.name} {el.surname}</Text>
           </View>
         </View>
-        <View flexDirection='row'>
+        <View flexDirection='row' justifyContent='center' alignItems='center'>
         <View justifyContent='center' alignItems='center'><Text /*style={styles.text}*/style={/*allmessages[lastmess].new ==='yes'&&*/ allmessages[lastmess]?.towhome.toString()===cookie.toString() ?styles.bold :styles.text}>{lastmessage}</Text></View>
         {newmess.length!=0 ? <View style={{marginLeft:1.2*Dimensions.get('window').width/2, backgroundColor: '#cff4fc', borderRadius:30, width: 30, height: 30, justifyContent: 'center', alignItems: 'center'}}><View justifyContent='center' alignItems='center'><Text style={styles.text}>+{newmess.length}</Text></View></View>: null}
         </View>
